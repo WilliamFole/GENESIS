@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-
+from datetime import date
 from app.api.deps import get_current_user, require_perfis
 from app.core.database import get_db
 from app.models.artigo import Artigo
 from app.models.imposto import Imposto
+from app.models.unidade import Unidade
 from app.models.utilizador import Perfil, Utilizador
 from app.schemas.artigo import ArtigoCreate, ArtigoRead, ArtigoUpdate
 from app.services import auditoria
@@ -23,7 +24,6 @@ def _obter_ou_404(db: Session, artigo_id: int) -> Artigo:
 
 
 def _gerar_codigo(db: Session, base: str = "ART") -> str:
-    # Gera algo como ART-0001
     count = db.query(func.count(Artigo.id)).scalar() or 0
     proximo = count + 1
     while True:
@@ -67,17 +67,25 @@ def criar(
     db: Session = Depends(get_db),
     user: Utilizador = Depends(_pode_escrever),
 ):
-    # Valida imposto
+    # Validar unidade (se fornecida)
+    if payload.unidade_id is not None:
+        u = db.get(Unidade, payload.unidade_id)
+        if not u:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unidade invalida")
+
+        # Validar imposto e vigência
     imp = db.get(Imposto, payload.imposto_id)
     if not imp:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Imposto invalido")
+    
+    hoje = date.today()
+    if imp.vigencia_inicio and hoje < imp.vigencia_inicio:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Imposto fora de vigencia")
+    if imp.vigencia_fim and hoje > imp.vigencia_fim:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Imposto fora de vigencia")
 
-    # Se o utilizador não inseriu código, gera um.
-    # Se inseriu, verifica se já existe.
     codigo_final = payload.codigo.strip() if payload.codigo else ""
     if not codigo_final:
-        # Se for um serviço, podemos usar "SRV" como base. 
-        # Mas para simplificar, usamos "ART" ou a base que o utilizador preferir.
         codigo_final = _gerar_codigo(db, "ART")
     else:
         existe = db.query(Artigo).filter(Artigo.codigo == codigo_final).first()
@@ -108,7 +116,7 @@ def criar(
     return artigo
 
 
-@router.put("/{artigo_id}", response_model=ArtigoRead)
+@router.patch("/{artigo_id}", response_model=ArtigoRead)
 def atualizar(
     artigo_id: int,
     payload: ArtigoUpdate,
@@ -124,6 +132,11 @@ def atualizar(
             existe = db.query(Artigo).filter(Artigo.codigo == dados["codigo"], Artigo.id != artigo.id).first()
             if existe:
                 raise HTTPException(status.HTTP_400_BAD_REQUEST, "Codigo ja em uso")
+
+    if "unidade_id" in dados and dados["unidade_id"] is not None:
+        u = db.get(Unidade, dados["unidade_id"])
+        if not u:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unidade invalida")
 
     if "imposto_id" in dados:
         imp = db.get(Imposto, dados["imposto_id"])

@@ -55,3 +55,16 @@ def admin_token(client):
 @pytest.fixture
 def auth_headers(admin_token):
     return {"Authorization": f"Bearer {admin_token}"}
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _licenca_ativa_nos_testes():
+    """O middleware bloqueia escritas sem licenca (403). Nos testes simula-se
+    uma licenca ativa, sem tocar no codigo de producao."""
+    mp = pytest.MonkeyPatch()
+    mp.setattr(
+        "app.middleware.licenca.obter_status_licenca",
+        lambda: {"status": "ativa", "cliente": "Testes", "validade": "2999-12-31"},
+    )
+    yield
+    mp.undo()

@@ -19,5 +19,45 @@ Software de faturação certificável para a República de Moçambique. Funciona
 
 1. Clona o repositório:
    ```bash
-   git clone https://github.com/SEU_USUARIO/genesis-sge.git
-   cd genesis-sge
+   git clone https://github.com/WilliamFole/GENESIS.git
+   cd GENESIS
+   ```
+
+2. Backend (Python 3.12):
+   ```bash
+   cd backend
+   python -m venv .venv
+   .venv\Scripts\activate          # Windows  (Linux/macOS: source .venv/bin/activate)
+   pip install -r requirements.txt
+   pip install -r requirements-dev.txt   # só para correr os testes
+   alembic upgrade head
+   python -m uvicorn app.main:app --port 8000
+   ```
+
+3. Frontend (Node 18+), noutro terminal:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   Abre http://localhost:5173 (o frontend encaminha `/api` para a porta 8000).
+
+## 🔐 Configuração e segurança
+
+Antes de usar em produção, cria o ficheiro `backend/.env` (nunca o envies para o GitHub):
+
+```env
+SECRET_KEY=<texto-aleatorio-longo>
+INITIAL_ADMIN_PASSWORD=<palavra-passe-forte>
+```
+
+- `SECRET_KEY` também protege as chaves de assinatura RSA guardadas na base de dados. **Define-a antes da primeira utilização e não a mudes depois**, senão as chaves existentes deixam de poder ser lidas.
+- Troca a palavra-passe do administrador no primeiro login.
+- Para o sistema recusar arrancar com a configuração insegura, define `GENESIS_STRICT_SECURITY=1`.
+
+## 🧪 Testes
+
+```bash
+cd backend
+python -m pytest -q
+```

@@ -39,6 +39,7 @@ from app.services.seed import criar_admin_inicial
 from app.middleware.licenca import LicencaMiddleware
 from app.api.auth import gerar_codigo_recuperacao
 from app.core.error_handler import global_exception_handler
+from app.core.avisos import avisar_configuracao_insegura
 
 
 app = FastAPI(
@@ -72,6 +73,7 @@ with SessionLocal() as _db:
     seed_clientes.executar(_db)
     seed_unidades.executar(_db)
     gerar_codigo_recuperacao()
+    avisar_configuracao_insegura(_db)
 
 # ---- Rotas ----
 app.include_router(licenca.router)
