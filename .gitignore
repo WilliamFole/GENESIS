@@ -9,6 +9,7 @@ env/
 *.db
 *.db-journal
 *.log
+*.patch
 
 # === Node.js ===
 node_modules/
