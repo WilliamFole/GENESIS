@@ -1,0 +1,48 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+*.db
+*.db-journal
+*.log
+
+# === Node.js ===
+node_modules/
+frontend/dist/
+.vite/
+
+# === Build e Instaladores ===
+backend/build/
+backend/dist/
+backend/Output/
+backend/frontend_dist/
+*.spec
+!GenesisBackend.spec
+
+# === Ficheiros Sensíveis (NUNCA subir) ===
+.env
+backend/.env
+*.pem
+*.lic
+cofre_licencas.pem
+private_key.pem
+public_key.pem
+
+# === Dados da Empresa/Cliente ===
+backend/data/
+!backend/data/.gitkeep
+
+# === Sistema Operativo ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Ficheiros temporários ===
+*.tmp
+*.bak
+Pasted text.txt
+arquitetura.txt
